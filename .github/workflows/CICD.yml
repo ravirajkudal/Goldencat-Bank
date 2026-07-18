@@ -27,12 +27,17 @@ jobs:
     needs: Compile
 
     steps:
-    - uses: actions/checkout@v4     # CHeckout files
-
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '17'
+        cache: maven
       # Trivy FS Scan is a filesystem security scan used before building a Docker image in a CI/CD pipeline. 
       # It scans the project directory for dependency vulnerabilities (CVEs), exposed secrets, Infrastructure-as-Code misconfigurations, and optionally license issues.
       # Trivy FS Scan checks -> Dependency Vulnerabilities, Secrets, IaC Misconfigurations, License Issues
-
+    - name: Download dependencies
+      run: mvn dependency:go-offline
+      
     - name: Install Trivy
       run: |
         sudo apt-get install wget gnupg
@@ -42,13 +47,18 @@ jobs:
         sudo apt-get install -y trivy
 
       # This command scans your local file system for security risks and saves the results as a JSON file.
-    - name: Trivy FS Scan   
-      run: trivy fs --format json -o fs-report.json .
+    - name: Run Trivy FS Scan
+      uses: aquasecurity/trivy-action@0.28.0
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'json'
+        output: 'fs-report.json'
       
       # A Static Application Security Testing (SAST) tool to automatically detect and prevent hardcoded secrets—such as API keys,
       # passwords, cloud tokens, and database credentials—from being exposed in source code
-    - name: Gitleaks Installation 
-      run: sudo apt-get install -y wget gnupg
+    - name: Run Gitleaks
+      uses: gitleaks/gitleaks-action@v2
 
       # Command scans the current directory for hardcoded secrets and saves any findings into a structured report file
     - name: Gitleaks code scan 
