@@ -110,6 +110,11 @@ jobs:
       with:
         # Disabling shallow clones is recommended for improving the relevancy of reporting
         fetch-depth: 0
+    - name: Upload JAR artifact
+      uses: actions/upload-artifact@v4
+      with:
+          name: app-jar
+          path: target/*.jar 
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v8.2.1
       env:
@@ -126,3 +131,14 @@ jobs:
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }} #OPTIONAL
+
+  buils_docker_image_and_push:
+    runs-on: self-hosted
+    needs: sonarqube
+    steps:
+    - uses: actions/checkout@v4
+    - name: Download JAR artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: app-jar
+        path: app  # this will download JAR to ./app folder
