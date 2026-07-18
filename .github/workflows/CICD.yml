@@ -8,7 +8,7 @@ on:
 jobs:
   # First job compile
   Compile:
-    runs-on: ubuntu-latest    # Shared runner
+    runs-on: custom   # Shared runner
     steps:
       - uses: actions/checkout@v4     # Checkout files
 
@@ -24,7 +24,7 @@ jobs:
 
   # Second job Security-check
   Security-check:
-    runs-on: ubuntu-latest    # Shared runner
+    runs-on: custom    # Shared runner
     needs: Compile
 
     steps:
