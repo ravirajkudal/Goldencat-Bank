@@ -73,3 +73,24 @@ jobs:
       # so no separate installation or CLI command is required.
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
+
+  # Job Three: Testing maven
+  Test:
+    runs-on: custom    # Shared runner
+    needs: Security-check
+
+    steps:
+      - uses: actions/checkout@v4     # Checkout files
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: maven
+
+      # Download all project dependencies before scanning.
+      # This populates the local Maven cache (~/.m2) so Trivy doesn't
+      # repeatedly download dependencies from Maven Central.
+      - name: Test Maven
+        run: mvn test
