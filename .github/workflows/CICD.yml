@@ -43,7 +43,7 @@ jobs:
 
       # This command scans your local file system for security risks and saves the results as a JSON file.
     - name: Trivy FS Scan   
-      run: gitleaks detect --source . --report-path gitleaks-report.json --report-format json
+      run: trivy fs --format json -o fs-report.json .
       
       # A Static Application Security Testing (SAST) tool to automatically detect and prevent hardcoded secrets—such as API keys,
       # passwords, cloud tokens, and database credentials—from being exposed in source code
@@ -52,6 +52,6 @@ jobs:
 
       # Command scans the current directory for hardcoded secrets and saves any findings into a structured report file
     - name: Gitleaks code scan 
-      run: gitleaks detect source . -r gitleaks-reports.json -f json
+      run: gitleaks detect --source . --report-path gitleaks-report.json --report-format json
 
 
