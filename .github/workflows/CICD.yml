@@ -100,3 +100,28 @@ jobs:
       # repeatedly download dependencies from Maven Central.
       - name: Test Maven
         run: mvn test
+
+  # Job Three: Testing maven
+  sonarqube:
+    runs-on: custom
+    needs: Test
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        # Disabling shallow clones is recommended for improving the relevancy of reporting
+        fetch-depth: 0
+    - name: SonarQube Scan
+      uses: SonarSource/sonarqube-scan-action@8.2.1
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}     
+    
+    # Check the Quality Gate status.
+    - name: SonarQube Quality Gate check
+      id: sonarqube-quality-gate-check
+      uses: sonarsource/sonarqube-quality-gate-action@master
+      with:
+        pollingTimeoutSec: 600
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }} #OPTIONAL
