@@ -7,7 +7,7 @@ on:
 
 jobs:
   #  First job compile
-  compile:    
+  Compile:    
     runs-on: ubuntu-latest    # Shared runner
 
     steps:
@@ -22,8 +22,9 @@ jobs:
       run: mvn compile
 
   #  Second job Security-check
-  Secuirty-check:    
+  Security-check:    
     runs-on: ubuntu-latest    # Shared runner
+    needs: Compile
 
     steps:
     - uses: actions/checkout@v4     # CHeckout files
@@ -31,23 +32,23 @@ jobs:
       # Trivy FS Scan is a filesystem security scan used before building a Docker image in a CI/CD pipeline. 
       # It scans the project directory for dependency vulnerabilities (CVEs), exposed secrets, Infrastructure-as-Code misconfigurations, and optionally license issues.
       # Trivy FS Scan checks -> Dependency Vulnerabilities, Secrets, IaC Misconfigurations, License Issues
-      
+
     - name: Install Trivy
       run: |
         sudo apt-get install wget gnupg
         wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
         echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
         sudo apt-get update
-        sudo apt-get install trivy
+        sudo apt-get install -y trivy
 
       # This command scans your local file system for security risks and saves the results as a JSON file.
     - name: Trivy FS Scan   
-      run: trivy fs --format json -o fs-report.json .
+      run: gitleaks detect --source . --report-path gitleaks-report.json --report-format json
       
       # A Static Application Security Testing (SAST) tool to automatically detect and prevent hardcoded secrets—such as API keys,
       # passwords, cloud tokens, and database credentials—from being exposed in source code
-    - name: Git leaks Installation 
-      run: sudo apt install gitleaks -y
+    - name: Gitleaks Installation 
+      run: sudo apt-get install -y wget gnupg
 
       # Command scans the current directory for hardcoded secrets and saves any findings into a structured report file
     - name: Gitleaks code scan 
