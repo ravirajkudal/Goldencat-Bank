@@ -101,20 +101,21 @@ jobs:
       - name: Test Maven
         run: mvn test
 
-  # Job Three: Testing maven
+  # Job Three: Installing SonarQube and Scanning
   sonarqube:
     runs-on: custom
     needs: Test
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
       with:
         # Disabling shallow clones is recommended for improving the relevancy of reporting
         fetch-depth: 0
     - name: SonarQube Scan
-      uses: SonarSource/sonarqube-scan-action@8.2.1
+      uses: SonarSource/sonarqube-scan-action@5
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}     
+
     
     # Check the Quality Gate status.
     - name: SonarQube Quality Gate check
