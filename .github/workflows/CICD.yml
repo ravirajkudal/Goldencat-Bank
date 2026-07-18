@@ -65,6 +65,12 @@ jobs:
           format: json
           output: fs-report.json
 
+      # Clean temporary files from previous runs.
+      # Required for self-hosted runners because the Gitleaks action
+      # downloads files to /tmp, which persists across workflow runs.
+      - name: Clean old Gitleaks temp files
+        run: rm -rf /tmp/gitleaks*
+
       # A Static Application Security Testing (SAST) tool to automatically detect
       # and prevent hardcoded secrets—such as API keys, passwords, cloud tokens,
       # and database credentials—from being exposed in source code.
