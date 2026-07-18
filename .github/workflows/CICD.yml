@@ -3,65 +3,73 @@ name: CI CD Pipeline
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch: 
+  workflow_dispatch:
 
 jobs:
-  #  First job compile
-  Compile:    
+  # First job compile
+  Compile:
     runs-on: ubuntu-latest    # Shared runner
-
     steps:
-    - uses: actions/checkout@v4     # CHeckout files
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: maven
-    - name: Build with Maven
-      run: mvn compile
+      - uses: actions/checkout@v4     # Checkout files
 
-  #  Second job Security-check
-  Security-check:    
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn compile
+
+  # Second job Security-check
+  Security-check:
     runs-on: ubuntu-latest    # Shared runner
     needs: Compile
 
     steps:
-    - uses: actions/setup-java@v4
-      with:
-        distribution: temurin
-        java-version: '17'
-        cache: maven
-      # Trivy FS Scan is a filesystem security scan used before building a Docker image in a CI/CD pipeline. 
-      # It scans the project directory for dependency vulnerabilities (CVEs), exposed secrets, Infrastructure-as-Code misconfigurations, and optionally license issues.
+      - uses: actions/checkout@v4     # Checkout files
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: maven
+
+      # Download all project dependencies before scanning.
+      # This populates the local Maven cache (~/.m2) so Trivy doesn't
+      # repeatedly download dependencies from Maven Central.
+      - name: Download dependencies
+        run: mvn dependency:go-offline
+
+      # Trivy FS Scan is a filesystem security scan used before building a Docker image in a CI/CD pipeline.
+      # It scans the project directory for dependency vulnerabilities (CVEs), exposed secrets,
+      # Infrastructure-as-Code misconfigurations, and optionally license issues.
       # Trivy FS Scan checks -> Dependency Vulnerabilities, Secrets, IaC Misconfigurations, License Issues
-    - name: Download dependencies
-      run: mvn dependency:go-offline
-      
-    - name: Install Trivy
-      run: |
-        sudo apt-get install wget gnupg
-        wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-        echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
-        sudo apt-get update
-        sudo apt-get install -y trivy
+      - name: Install Trivy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
 
       # This command scans your local file system for security risks and saves the results as a JSON file.
-    - name: Run Trivy FS Scan
-      uses: aquasecurity/trivy-action@0.28.0
-      with:
-        scan-type: 'fs'
-        scan-ref: '.'
-        format: 'json'
-        output: 'fs-report.json'
-      
-      # A Static Application Security Testing (SAST) tool to automatically detect and prevent hardcoded secrets—such as API keys,
-      # passwords, cloud tokens, and database credentials—from being exposed in source code
-    - name: Run Gitleaks
-      uses: gitleaks/gitleaks-action@v2
+      - name: Run Trivy FS Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: json
+          output: fs-report.json
 
-      # Command scans the current directory for hardcoded secrets and saves any findings into a structured report file
-    - name: Gitleaks code scan 
-      run: gitleaks detect --source . --report-path gitleaks-report.json --report-format json
-
-
+      # A Static Application Security Testing (SAST) tool to automatically detect
+      # and prevent hardcoded secrets—such as API keys, passwords, cloud tokens,
+      # and database credentials—from being exposed in source code.
+      #
+      # The official Gitleaks GitHub Action installs and runs Gitleaks automatically,
+      # so no separate installation or CLI command is required.
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
